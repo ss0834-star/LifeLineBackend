@@ -1,11 +1,12 @@
 from fastapi import APIRouter
+from fastapi.responses import JSONResponse
 from app.models.schemas import QueryRequest
 from app.services.solver import solve_query
 
 router = APIRouter()
 
 @router.post("/answer")
-def answer_query(request: QueryRequest):
+async def answer_query(request: QueryRequest):
     output = solve_query(request.query)
-    # Manual dictionary return to avoid any Pydantic model serialization overhead/extra fields
-    return {"output": output}
+    # Use explicit JSONResponse to match the root handler's consistency
+    return JSONResponse(content={"output": output})
