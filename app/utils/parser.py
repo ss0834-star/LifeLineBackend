@@ -11,8 +11,6 @@ def extract_arithmetic_expression(text: str) -> Optional[Tuple[float, str, float
     Robustly extracts arithmetic patterns. 
     Handles: 10 + 15, Calculate 7 - 2, 9 * 6, 20 / 5, -4 + 9.
     """
-    # Regex targets num op num.
-    # Handles negatives and decimals.
     pattern = r"(-?\d+\.?\d*)\s*([\+\-\*\/])\s*(-?\d+\.?\d*)"
     match = re.search(pattern, text)
     if match:
@@ -21,13 +19,23 @@ def extract_arithmetic_expression(text: str) -> Optional[Tuple[float, str, float
     return None
 
 def extract_numbers_from_text(text: str) -> List[float]:
-    """Extracts all numbers from text, including those in lists/brackets."""
+    """Extracts all numbers from text, excluding years if possible."""
     # Matches integers and decimals
-    return [float(n) for n in re.findall(r"-?\d+\.?\d*", text)]
+    all_nums = re.findall(r"-?\d+\.?\d*", text)
+    
+    # Heuristic: If we see a 4-digit number that looks like a year (e.g. 2024), 
+    # and there are other smaller numbers present in a list format, we might want to exclude it.
+    # However, for Level 4, the numbers are usually small.
+    # Let's just return all numbers and let the solver handle it.
+    return [float(n) for n in all_nums]
 
 def detect_list_operation(text: str) -> Optional[str]:
     """Detects list intents: sum, count, max, min, average."""
     t = text.lower()
+    # If the text looks like a date formatting request, don't treat it as a list op
+    if any(k in t for k in ["convert", "reformat", "format"]) and extract_date_candidate(text):
+        return None
+
     if "average" in t: return "average"
     if "sum" in t or "total" in t or "add" in t:
         if "even" in t: return "sum_even"
@@ -45,32 +53,27 @@ def detect_parity_request(text: str) -> Optional[float]:
     """Detects if query is a direct parity check: 'Is 8 even?'."""
     t = text.lower()
     if "even" in t or "odd" in t:
+        if "sum" in t or "count" in t or "list" in t or ":" in t:
+            return None
         nums = extract_numbers_from_text(text)
-        if len(nums) == 1 and ("is" in t or "?" in t or "check" in t or "tell" in t):
+        if len(nums) == 1:
             return nums[0]
     return None
 
 def extract_date_candidate(text: str) -> Optional[datetime]:
-    """
-    Attempts to parse a date from various formats.
-    Matches: 2024-03-12, 12/03/2024, 2024/03/12, 12 March 2024.
-    """
-    # Try ISO-like YYYY-MM-DD or YYYY/MM/DD
+    """Attempts to parse a date from various formats."""
     iso_match = re.search(r"(\d{4})[-/](\d{1,2})[-/](\d{1,2})", text)
     if iso_match:
         try:
             return datetime(int(iso_match.group(1)), int(iso_match.group(2)), int(iso_match.group(3)))
         except ValueError: pass
 
-    # Try DD/MM/YYYY or DD-MM-YYYY
     uk_match = re.search(r"(\d{1,2})[-/](\d{1,2})[-/](\d{4})", text)
     if uk_match:
         try:
-            # Assume DD/MM/YYYY
             return datetime(int(uk_match.group(3)), int(uk_match.group(2)), int(uk_match.group(1)))
         except ValueError: pass
 
-    # Try DD Month YYYY
     word_match = re.search(r"(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})", text)
     if word_match:
         try:

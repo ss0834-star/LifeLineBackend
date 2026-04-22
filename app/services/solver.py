@@ -3,18 +3,21 @@ from app.utils import parser
 def solve_query(query: str) -> str:
     """
     Hybrid rule-based solver.
-    Priority:
-    1. List/Sequence Aggregates (Level 4)
-    2. Date Formatting (Level 2)
-    3. Parity Tasks (Level 3)
-    4. Basic Arithmetic (Level 1)
+    Priority is meticulously ordered to prevent cross-level interference.
     """
     normalized = parser.normalize_query(query)
 
     # 1. Level 4: List / Aggregate Operations
+    # Check for List patterns like "Numbers:", "List:", or explicit "sum/count even/odd"
     list_op = parser.detect_list_operation(query)
     if list_op:
-        nums = parser.extract_numbers_from_text(query)
+        # For Level 4, extract only the numbers that appear after the "Numbers:" or "List:" prefix if present
+        # to avoid accidentally picking up numbers from the instruction text.
+        target_text = query
+        if ":" in query:
+            target_text = query.split(":", 1)[1]
+        
+        nums = parser.extract_numbers_from_text(target_text)
         if nums:
             if list_op == "sum_even":
                 res = sum(n for n in nums if n % 2 == 0)
@@ -43,7 +46,6 @@ def solve_query(query: str) -> str:
     if parser.detect_date_formatting_request(query):
         date_obj = parser.extract_date_candidate(query)
         if date_obj:
-            # Expected format: 12 March 2024
             return date_obj.strftime("%d %B %Y").lstrip("0")
 
     # 3. Level 3: Parity Tokens (YES/NO)
@@ -76,10 +78,8 @@ def solve_query(query: str) -> str:
                 if op2 == 0:
                     return "Division by zero is not allowed."
                 res = op1 / op2
-                # Special rule: division should return .0 even if integer
                 return f"The quotient is {float(res)}."
         except Exception:
             pass
 
-    # Fallback
     return "I could not determine the answer."
