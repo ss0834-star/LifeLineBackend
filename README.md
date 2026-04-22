@@ -6,8 +6,17 @@ It provides a public endpoint to answer arithmetic questions provided in a natur
 ## Project Purpose
 To parse and solve basic arithmetic operations (+, -, *, /) from natural language strings via a robust API endpoint.
 
-## Request Format
-The API expects a JSON body with a `query` string and an optional list of `assets` URLs.
+## GET /
+Returns a health check message.
+```json
+{
+  "message": "API is running"
+}
+```
+
+## POST /v1/answer
+The evaluator endpoint.
+### Request Format
 ```json
 {
   "query": "What is 10 + 15?",
@@ -15,8 +24,7 @@ The API expects a JSON body with a `query` string and an optional list of `asset
 }
 ```
 
-## Response Format
-The API responds with a JSON body containing an `output` string.
+### Response Format
 ```json
 {
   "output": "The sum is 25."
@@ -40,9 +48,6 @@ curl -X POST "http://127.0.0.1:8000/v1/answer" \
 -d '{"query":"What is 10 + 15?","assets":[]}'
 ```
 
-## Deployment Note for Render
-This project is configured for easy deployment on Render.
-It includes a `Procfile` and a `runtime.txt`.
-Create a New Web Service on Render, connect your repository, and it will automatically use the `Procfile` to run the FastAPI app via Uvicorn.
-
-Final endpoint path: `/v1/answer`
+## Deployment Note
+The final submit URL should be:
+`https://your-domain.com/v1/answer`
