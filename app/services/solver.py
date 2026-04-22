@@ -3,6 +3,7 @@ from app.utils.parser import extract_expression
 def solve_query(query: str) -> str:
     """
     Parses the query and returns the exact answer string required by the evaluator.
+    Strictly follows: 'The sum/difference/product/quotient is X.'
     """
     parsed = extract_expression(query)
     if not parsed:
@@ -24,8 +25,10 @@ def solve_query(query: str) -> str:
             if op2 == 0:
                 return "Division by zero is not allowed."
             ans = op1 / op2
-            # Explicitly format to 1 decimal place if it's a whole number or as per requirements
-            return f"The quotient is {ans:.1f}" if ans.is_integer() else f"The quotient is {ans}"
+            # Force .0 for whole number divisions to satisfy '4.0' requirements
+            if ans == int(ans):
+                return f"The quotient is {float(ans)}."
+            return f"The quotient is {ans}."
     except Exception:
         return "I could not determine the answer."
     
