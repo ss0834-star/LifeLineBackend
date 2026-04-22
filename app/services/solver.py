@@ -1,23 +1,33 @@
-from app.utils.parser import extract_expression, extract_date, extract_parity_query
+from app.utils.parser import extract_expression, extract_date, extract_parity_query, extract_list_and_action
 
 def solve_query(query: str) -> str:
     """
     Parses the query and returns the exact answer string required by the evaluator.
-    Supports Level 1 (Math), Level 2 (Date), and Level 3 (Odd/Even).
+    Supports Level 1 (Math), Level 2 (Date), Level 3 (Parity), and Level 4 (List Sum).
     """
     q_lower = query.lower()
+
+    # Level 4: List Summation
+    list_data = extract_list_and_action(query)
+    if list_data:
+        numbers, action = list_data
+        if action == "sum_even":
+            result = sum(n for n in numbers if n % 2 == 0)
+            return str(result)
+        elif action == "sum_odd":
+            result = sum(n for n in numbers if n % 2 != 0)
+            return str(result)
+        elif action == "sum_all":
+            result = sum(numbers)
+            return str(result)
 
     # Level 3: Parity (Odd/Even)
     parity_num = extract_parity_query(query)
     if parity_num is not None:
-        is_odd_query = "odd" in q_lower
-        is_even_query = "even" in q_lower
-        
         is_actually_odd = parity_num % 2 != 0
-        
-        if is_odd_query:
+        if "odd" in q_lower:
             return "YES" if is_actually_odd else "NO"
-        elif is_even_query:
+        elif "even" in q_lower:
             return "YES" if not is_actually_odd else "NO"
 
     # Level 2: Date Extraction
