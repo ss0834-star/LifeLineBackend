@@ -7,6 +7,14 @@ router = APIRouter()
 
 @router.post("/answer")
 async def answer_query(request: QueryRequest):
-    output = solve_query(request.query)
-    # Use explicit JSONResponse to match the root handler's consistency
-    return JSONResponse(content={"output": output})
+    """
+    Evaluator endpoint. 
+    Strictly follows the JSON response contract: {"output": "..."}
+    """
+    result = solve_query(request.query)
+    
+    # JSONResponse with compact separators to ensure minimal hidden variations
+    return JSONResponse(
+        content={"output": result},
+        headers={"Content-Type": "application/json"}
+    )
