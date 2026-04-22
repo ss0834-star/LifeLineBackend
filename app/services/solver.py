@@ -1,17 +1,31 @@
-from app.utils.parser import extract_expression, extract_date
+from app.utils.parser import extract_expression, extract_date, extract_parity_query
 
 def solve_query(query: str) -> str:
     """
     Parses the query and returns the exact answer string required by the evaluator.
-    Supports Level 1 (Arithmetic) and Level 2 (Date Extraction).
+    Supports Level 1 (Math), Level 2 (Date), and Level 3 (Odd/Even).
     """
-    # Try Level 2: Date Extraction
+    q_lower = query.lower()
+
+    # Level 3: Parity (Odd/Even)
+    parity_num = extract_parity_query(query)
+    if parity_num is not None:
+        is_odd_query = "odd" in q_lower
+        is_even_query = "even" in q_lower
+        
+        is_actually_odd = parity_num % 2 != 0
+        
+        if is_odd_query:
+            return "YES" if is_actually_odd else "NO"
+        elif is_even_query:
+            return "YES" if not is_actually_odd else "NO"
+
+    # Level 2: Date Extraction
     date_match = extract_date(query)
     if date_match:
-        # Based on screenshot, expected output is just the date string: "12 March 2024"
         return date_match
 
-    # Try Level 1: Arithmetic
+    # Level 1: Arithmetic
     parsed = extract_expression(query)
     if parsed:
         op1, operator, op2 = parsed
