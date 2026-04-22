@@ -8,39 +8,37 @@ def solve_query(query: str) -> str:
     normalized = parser.normalize_query(query)
 
     # 1. Level 4: List / Aggregate Operations
-    # Check for List patterns like "Numbers:", "List:", or explicit "sum/count even/odd"
     list_op = parser.detect_list_operation(query)
     if list_op:
-        # For Level 4, extract only the numbers that appear after the "Numbers:" or "List:" prefix if present
-        # to avoid accidentally picking up numbers from the instruction text.
         target_text = query
         if ":" in query:
             target_text = query.split(":", 1)[1]
         
         nums = parser.extract_numbers_from_text(target_text)
         if nums:
+            res = 0
             if list_op == "sum_even":
                 res = sum(n for n in nums if n % 2 == 0)
-                return str(int(res))
-            if list_op == "sum_odd":
+            elif list_op == "sum_odd":
                 res = sum(n for n in nums if n % 2 != 0)
-                return str(int(res))
-            if list_op == "count_even":
+            elif list_op == "count_even":
                 res = len([n for n in nums if n % 2 == 0])
-                return str(res)
-            if list_op == "count_odd":
+            elif list_op == "count_odd":
                 res = len([n for n in nums if n % 2 != 0])
-                return str(res)
-            if list_op == "sum_all":
+            elif list_op == "sum_all":
                 res = sum(nums)
-                return str(int(res))
-            if list_op == "max":
-                return str(int(max(nums)))
-            if list_op == "min":
-                return str(int(min(nums)))
-            if list_op == "average":
+            elif list_op == "max":
+                res = max(nums)
+            elif list_op == "min":
+                res = min(nums)
+            elif list_op == "average":
                 res = sum(nums) / len(nums)
-                return str(res if res != int(res) else int(res))
+            
+            # FORMATTING FIX: Return purely as an integer string if it's a whole number.
+            # This ensures "10" instead of "10.0" for sum/count/max/min.
+            if res == int(res):
+                return str(int(res))
+            return str(res)
 
     # 2. Level 2: Date Formatting
     if parser.detect_date_formatting_request(query):
