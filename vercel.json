@@ -1,5 +1,6 @@
 {
   "version": 2,
+  "framework": null,
   "builds": [
     {
       "src": "app/main.py",
@@ -7,6 +8,11 @@
     }
   ],
   "routes": [
+    {
+      "src": "/v1/answer",
+      "methods": ["POST"],
+      "dest": "app/main.py"
+    },
     {
       "src": "/(.*)",
       "dest": "app/main.py"
