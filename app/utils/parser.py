@@ -9,44 +9,70 @@ def normalize_query(text: str) -> str:
 def extract_arithmetic_expression(text: str) -> Optional[Tuple[float, str, float]]:
     """
     Robustly extracts arithmetic patterns. 
-    Handles: 10 + 15, Calculate 7 - 2, 9 * 6, 20 / 5, -4 + 9.
+    Handles explicit operators and text-based exact 2-number math.
     """
     pattern = r"(-?\d+\.?\d*)\s*([\+\-\*\/])\s*(-?\d+\.?\d*)"
     match = re.search(pattern, text)
     if match:
         op1, operator, op2 = match.groups()
         return float(op1), operator, float(op2)
+        
+    nums = extract_numbers_from_text(text)
+    t = text.lower()
+    if len(nums) == 2 and not any(c in t for c in [",", "[", "]", ":"]):
+        if "sum" in t or "add" in t or "plus" in t:
+            return nums[0], "+", nums[1]
+        if "difference" in t or "subtract" in t or "minus" in t:
+            return nums[0], "-", nums[1]
+        if "product" in t or "multiply" in t or "times" in t:
+            return nums[0], "*", nums[1]
+        if "quotient" in t or "divide" in t:
+            return nums[0], "/", nums[1]
+            
     return None
 
 def extract_numbers_from_text(text: str) -> List[float]:
-    """Extracts all numbers from text, excluding years if possible."""
-    # Matches integers and decimals
-    all_nums = re.findall(r"-?\d+\.?\d*", text)
+    """Extracts all numbers from text, isolating bracketed lists or colon-separated lists first to prevent noise."""
+    # Remove known noise words that might be next to numbers, like "Level 4"
+    clean_text = re.sub(r"level\s*\d+", "", text, flags=re.IGNORECASE)
+    clean_text = re.sub(r"\b\d+\s+(numbers|values|elements)\b", "", clean_text, flags=re.IGNORECASE)
     
-    # Heuristic: If we see a 4-digit number that looks like a year (e.g. 2024), 
-    # and there are other smaller numbers present in a list format, we might want to exclude it.
-    # However, for Level 4, the numbers are usually small.
-    # Let's just return all numbers and let the solver handle it.
+    bracket_match = re.search(r"\[(.*?)\]", clean_text)
+    if bracket_match:
+        clean_text = bracket_match.group(1)
+    elif ":" in clean_text:
+        clean_text = clean_text.split(":", 1)[1]
+        
+    all_nums = re.findall(r"-?\d+\.?\d*", clean_text)
     return [float(n) for n in all_nums]
 
-def detect_list_operation(text: str) -> Optional[str]:
-    """Detects list intents: sum, count, max, min, average."""
+def detect_list_operation(text: str, nums: List[float]) -> Optional[str]:
+    """Detects list intents. Must have list characteristics to avoid hijacking Level 1 arithmetic."""
     t = text.lower()
-    # If the text looks like a date formatting request, don't treat it as a list op
+    
+    # Must have list indicators or > 2 numbers to be a list operation
+    is_list_context = any(c in t for c in [",", "[", "]", ":"]) or len(nums) > 2
+    if not is_list_context:
+        return None
+
     if any(k in t for k in ["convert", "reformat", "format"]) and extract_date_candidate(text):
         return None
 
-    if "average" in t: return "average"
+    if "average" in t or "mean" in t: return "average"
     if "sum" in t or "total" in t or "add" in t:
         if "even" in t: return "sum_even"
         if "odd" in t: return "sum_odd"
         return "sum_all"
-    if "count" in t or "how many" in t:
+    if "count" in t or "how many" in t or "length" in t:
         if "even" in t: return "count_even"
         if "odd" in t: return "count_odd"
         return "count_all"
-    if "max" in t or "largest" in t or "biggest" in t or "highest" in t: return "max"
-    if "min" in t or "smallest" in t or "lowest" in t: return "min"
+    if "max" in t or "largest" in t or "biggest" in t or "highest" in t or "maximum" in t: return "max"
+    if "min" in t or "smallest" in t or "lowest" in t or "minimum" in t: return "min"
+    if "product" in t or "multiply" in t:
+        if "even" in t: return "product_even"
+        if "odd" in t: return "product_odd"
+        return "product_all"
     return None
 
 def detect_parity_request(text: str) -> Optional[float]:

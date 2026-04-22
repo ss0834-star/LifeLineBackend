@@ -7,8 +7,11 @@ def solve_query(query: str) -> str:
     """
     normalized = parser.normalize_query(query)
 
+    # Extract global numbers first for intent detection
+    global_nums = parser.extract_numbers_from_text(query)
+
     # 1. Level 4: List / Aggregate Operations
-    list_op = parser.detect_list_operation(query)
+    list_op = parser.detect_list_operation(query, global_nums)
     if list_op:
         target_text = query
         if ":" in query:
@@ -27,12 +30,25 @@ def solve_query(query: str) -> str:
                 res = len([n for n in nums if n % 2 != 0])
             elif list_op == "sum_all":
                 res = sum(nums)
+            elif list_op == "count_all":
+                res = len(nums)
             elif list_op == "max":
                 res = max(nums)
             elif list_op == "min":
                 res = min(nums)
             elif list_op == "average":
-                res = sum(nums) / len(nums)
+                res = sum(nums) / len(nums) if len(nums) > 0 else 0
+            elif list_op == "product_all":
+                res = 1
+                for n in nums: res *= n
+            elif list_op == "product_even":
+                res = 1
+                for n in nums:
+                    if n % 2 == 0: res *= n
+            elif list_op == "product_odd":
+                res = 1
+                for n in nums:
+                    if n % 2 != 0: res *= n
             
             # FORMATTING FIX: Return purely as an integer string if it's a whole number.
             # This ensures "10" instead of "10.0" for sum/count/max/min.
