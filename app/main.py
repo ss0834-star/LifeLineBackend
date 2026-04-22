@@ -16,8 +16,6 @@ def solve(query: str) -> str:
     if not nums: return "0"
     
     # LEVEL 4: Comprehensive Multi-Operation Support
-    # This covers ALL hidden test cases (Sum, Count, Max, Min, Average, Product)
-    # for All, Even, and Odd numbers.
     
     # 1. SUM Ops
     if "sum" in q or "total" in q or "add" in q:
@@ -34,7 +32,7 @@ def solve(query: str) -> str:
     # 3. MAX/MIN Ops
     if "max" in q or "largest" in q or "biggest" in q or "highest" in q:
         return str(max(nums))
-    if "min" in q or "smallest" in t or "lowest" in q:
+    if "min" in q or "smallest" in q or "lowest" in q:
         return str(min(nums))
         
     # 4. AVERAGE Ops
